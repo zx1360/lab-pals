@@ -73,7 +73,9 @@ namespace LabPals
             affectionBrain.KeyTransition(30,1,false,220);affectionBrain.Step(1001);
             Assert(affectionBrain.Pose==Pose.Idle, "Expression and hand return to rest independently");
             affectionBrain.Sleep(2000);
-            Assert(affectionBrain.NextDelay(2000)<=33 && affectionBrain.Phase(2361)==12 && affectionBrain.NextDelay(2361)==60000, "Sleep settles briefly then stops high-frequency scheduling");
+            Assert(affectionBrain.NextDelay(2000)<=33 && affectionBrain.Phase(2361)==12 && affectionBrain.NextDelay(2361)==int.MaxValue, "Settled sleep has no scheduled animation wakeups");
+            var heldExpression = new PetBrain(0); heldExpression.Pat(1000);
+            Assert(heldExpression.NextDelay(1200)==370, "A held expression sleeps until its fade-out instead of polling frames");
 
             int frames = 0;
             foreach (Character c in Enum.GetValues(typeof(Character)))
@@ -174,8 +176,34 @@ namespace LabPals
                 window.StopFocus(); Assert(!window.Brain.Focusing, "Focus menu restores normal behavior");
 
                 int beforePress=window.RenderCount;
-                Assert(window.ProcessStroke(30,1,true) && window.RenderCount==beforePress+1, "Real key handler presents the contact frame before returning");
-                window.ProcessStroke(30,1,false);
+                var burstWatch=Stopwatch.StartNew();
+                bool allAccepted=true;
+                for(int i=0;i<2000;i++) allAccepted &= window.ProcessStroke(30,1,i%2==0);
+                burstWatch.Stop();
+                Assert(allAccepted && window.RenderCount-beforePress<=burstWatch.ElapsedMilliseconds/AnimationTiming.FrameMs+1,
+                    "2000 rapid input transitions preserve state while presentations obey the shared frame budget");
+                var settleWatch=Stopwatch.StartNew();
+                while(settleWatch.ElapsedMilliseconds<250) { Application.DoEvents(); Thread.Sleep(5); }
+                Assert(!window.FramePending && window.RenderCount>beforePress && Math.Abs(window.Brain.LeftHand(long.MaxValue).Press)<0.001f,
+                    "The coalesced final release is presented and settles without pending work");
+                window.SetSessionLocked(true);
+                int beforePause=window.RenderCount;
+                Assert(!window.KeyboardRegistered && !window.SchedulerRunning && !window.ProcessStroke(30,1,true),
+                    "Session lock unregisters input and stops the scheduler");
+                window.SetSessionDisconnected(true); window.SetSessionDisconnected(false);
+                Assert(!window.KeyboardRegistered && !window.SchedulerRunning && window.RenderCount==beforePause,
+                    "Reconnecting a locked session cannot resume rendering or input");
+                window.SetPowerSuspended(true); window.SetSessionLocked(false);
+                Assert(window.RenderCount==beforePause && !window.SchedulerRunning, "Unlock cannot resume rendering while power is suspended");
+                window.SetPowerSuspended(false);
+                Assert(window.KeyboardRegistered && window.RenderCount>beforePause, "Power resume restores input and presents the current pose");
+                window.ToggleSleep(); window.SetSessionLocked(true); window.SetSessionLocked(false);
+                Assert(window.Brain.ManualSleep && window.Brain.Pose==Pose.Sleep, "Unlock preserves an explicitly selected sleeping pose");
+                var sleepWatch=Stopwatch.StartNew();
+                while(sleepWatch.ElapsedMilliseconds<500) { Application.DoEvents(); Thread.Sleep(5); }
+                Assert(!window.SchedulerRunning && !window.KeyboardRegistered && !window.FramePending,
+                    "A settled manually sleeping native window stops its timer and keyboard subscription completely");
+                window.ToggleSleep();
 
                 using (var process = Process.GetCurrentProcess())
                 {
@@ -193,7 +221,12 @@ namespace LabPals
                     int count = window.RenderCount;
                     TimeSpan cpuStart = process.TotalProcessorTime;
                     var idleWatch = Stopwatch.StartNew();
-                    while (idleWatch.ElapsedMilliseconds < 15000) { Application.DoEvents(); Thread.Sleep(20); }
+                    using(var idleLoop=new ApplicationContext())
+                    using(var idleEnd=new System.Windows.Forms.Timer { Interval=15000 })
+                    {
+                        idleEnd.Tick+=delegate { idleEnd.Stop(); idleLoop.ExitThread(); };
+                        idleEnd.Start(); Application.Run(idleLoop);
+                    }
                     idleWatch.Stop(); process.Refresh();
                     double cpuMs = (process.TotalProcessorTime - cpuStart).TotalMilliseconds;
                     double oneCorePercent = cpuMs / idleWatch.Elapsed.TotalMilliseconds * 100;

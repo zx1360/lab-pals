@@ -86,8 +86,10 @@ async function main(){
     for(let side=0;side<2;side++){
       const layer=Buffer.alloc(W*H*4);
       for(let i=0;i<W*H;i++)if(masks[side].mask[i]){
-        const [r,g,b,a]=assembled.subarray(i*4,i*4+4);
-        if(a>0&&((r-g>8&&r-b>16)||(r+g+b)/3<170))assembled.copy(layer,i*4,i*4,i*4+4);
+        // The connected skin mask already selects the hand. Preserve all its
+        // highlights and antialiased contours; a second colour filter leaves
+        // fixed speckles behind when pale fingers move away from the body.
+        if(assembled[i*4+3]>0)assembled.copy(layer,i*4,i*4,i*4+4);
       }
       await save(layer,path.join(out,name+(side===0?'-left.png':'-right.png')));
     }

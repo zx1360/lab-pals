@@ -16,6 +16,7 @@ namespace LabPals
             {
                 if (args.Length == 2 && args[0] == "--self-test") SelfTest.Run(args[1]);
                 else if (args.Length == 2 && args[0] == "--motion-test") MotionBenchmark.Run(args[1]);
+                else if (args.Length == 2 && args[0] == "--burst-test") MotionBenchmark.RunBurst(args[1]);
                 else if (args.Length == 2 && (args[0] == "--preview" || args[0] == "--preview-frames"))
                     PreviewGallery.Export(args[1], args[0] == "--preview-frames");
                 else if (args.Length == 1 && args[0] == "--review")

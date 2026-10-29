@@ -81,6 +81,26 @@ namespace LabPals
                 sheet.Save(Path.Combine(folder,"入睡姿势.png"),ImageFormat.Png);
             }
         }
+        internal static void ExportMayuriDetails(string folder)
+        {
+            float[] scales={.55f,.75f,1f,1.25f};
+            using(var sheet=new Bitmap(1140,800))using(var g=Graphics.FromImage(sheet))
+            using(var font=new Font("Microsoft YaHei UI",16,FontStyle.Regular,GraphicsUnit.Pixel))
+            using(var ink=new SolidBrush(PetRenderer.Ink))
+            {
+                g.Clear(Color.FromArgb(246,243,235));g.TextRenderingHint=System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+                int x=0;
+                for(int i=0;i<scales.Length;i++)
+                {
+                    float scale=scales[i];int width=(int)Math.Ceiling(PetRenderer.Width*scale);
+                    g.DrawString(new[]{"迷你","小号","标准","大号"}[i]+" / "+width+" px",font,ink,x+12,12);
+                    using(var image=PetRenderer.Render(Character.Mayuri,Pose.Idle,0,scale,null))g.DrawImageUnscaled(image,x,380-image.Height);
+                    using(var image=PetRenderer.Render(Character.Mayuri,Pose.Sleep,AnimationTiming.SleepPhases,scale,null))g.DrawImageUnscaled(image,x,780-image.Height);
+                    x+=width+16;
+                }
+                sheet.Save(Path.Combine(folder,"真由理尺寸检查.png"),ImageFormat.Png);
+            }
+        }
         internal static void ExportInteraction(string folder)
         {
             string frames=Path.Combine(folder,"interaction-frames");Directory.CreateDirectory(frames);var brain=new PetBrain(0);

@@ -120,10 +120,16 @@ namespace LabPals
         public int NextDelay(long now)
         {
             if (Hidden) return 60000;
-            if (Pose == Pose.Sleep) return now - SleepStarted < AnimationTiming.SleepMs ? AnimationTiming.PoseFrameMs : 60000;
+            if (Pose == Pose.Sleep) return now - SleepStarted < AnimationTiming.SleepMs ? AnimationTiming.PoseFrameMs : int.MaxValue;
             if (HandsAnimating(now)) return AnimationTiming.FrameMs;
             long due = NextBlink;
-            if (Pose == Pose.Pat) due = Math.Min(ReactionUntil, now + AnimationTiming.PoseFrameMs);
+            if (Pose == Pose.Pat)
+            {
+                long age = now - PatStarted;
+                due = age >= AnimationTiming.PatInMs && age < AnimationTiming.PatHoldUntilMs
+                    ? PatStarted + AnimationTiming.PatHoldUntilMs
+                    : Math.Min(ReactionUntil, now + AnimationTiming.PoseFrameMs);
+            }
             else if (Pose == Pose.Blink) due = ReactionUntil;
             if (AutoSleep && !Focusing) due = Math.Min(due, LastActivity + SleepDelay);
             return (int)Math.Max(15, Math.Min(60000, due - now));

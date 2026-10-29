@@ -37,6 +37,8 @@ Primary request: Create a distinct SLEEPING pose of this same character, in the 
 
 ## Mayuri / hands
 
+2026-10-29 已重绘；当前 source/Mayuri-hands.png 使用 [修订提示词](mayuri-revision-prompts.md)，下方保留初版记录。
+
 参考：reference/Mayuri.png（角色基准图）。生成原图：source/Mayuri-hands.png。
 
 ```text
@@ -58,6 +60,8 @@ Primary request: Change ONLY facial expression, keeping exact head position, all
 ```
 
 ## Mayuri / sleep
+
+2026-10-29 已重绘；当前 source/Mayuri-sleep.png 使用 [修订提示词](mayuri-revision-prompts.md)，下方保留初版记录。
 
 参考：reference/Mayuri.png（角色基准图）。生成原图：source/Mayuri-sleep.png。
 

@@ -3,7 +3,8 @@ namespace LabPals
     // Durations in monotonic milliseconds; shared by scheduling and rendering.
     internal static class AnimationTiming
     {
-        internal const int FrameMs = 16;
+        // One shared presentation budget for input bursts and interpolated motion.
+        internal const int FrameMs = 33;
         internal const int HandReleaseMs = 120;
         internal const int StrikeMs = 55;
         internal const int BlinkMs = 150;

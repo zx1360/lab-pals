@@ -11,7 +11,10 @@ $reportPath = Get-ProjectPath $ReportDirectory
 New-Item -ItemType Directory -Force -Path $reportPath | Out-Null
 $diagnostic = Join-Path $buildPath 'LabPals.Diagnostics.exe'
 Invoke-Diagnostic $diagnostic '--self-test' (Join-Path $reportPath 'self-test.txt')
-if ($Performance) { Invoke-Diagnostic $diagnostic '--motion-test' (Join-Path $reportPath 'motion.txt') }
+if ($Performance) {
+    Invoke-Diagnostic $diagnostic '--motion-test' (Join-Path $reportPath 'motion.txt')
+    Invoke-Diagnostic $diagnostic '--burst-test' (Join-Path $reportPath 'burst.txt')
+}
 $checks = @(Select-String -LiteralPath (Join-Path $reportPath 'self-test.txt') -Pattern '^PASS ').Count
 $result = [ordered]@{
     version = Get-AppVersion

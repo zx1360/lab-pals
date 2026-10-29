@@ -24,6 +24,7 @@ namespace LabPals
             if (includeFrames) PreviewExports.ExportTyping(folder);
             PreviewExports.ExportPersonalities(folder);
             PreviewExports.ExportSleep(folder);
+            PreviewExports.ExportMayuriDetails(folder);
             if (includeFrames) PreviewExports.ExportInteraction(folder);
             using (var pet = new PetWindow(new PetSettings(), false))
             using (var panel = new CompanionPanel(pet, new PetSettings(), new PetBrain(0)))
@@ -67,7 +68,7 @@ namespace LabPals
                 for (int i = 0; i < poses.Length; i++)
                 {
                     var state = g.Save(); g.TranslateTransform(i * 320, 89);
-                    PetRenderer.Draw(g, Character.Mayuri, poses[i], i == 2 ? 10 : 0, null); g.Restore(state);
+                    PetRenderer.Draw(g, Character.Mayuri, poses[i], poses[i] == Pose.Sleep ? AnimationTiming.SleepPhases : i == 2 ? 10 : 0, null); g.Restore(state);
                     Text(g, names[i], "Microsoft YaHei UI", 17, FontStyle.Regular, PetRenderer.Ink, i * 320 + 68, 381);
                 }
                 image.Save(path, ImageFormat.Png);

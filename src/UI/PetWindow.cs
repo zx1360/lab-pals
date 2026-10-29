@@ -20,11 +20,17 @@ namespace LabPals
         private readonly FocusSession focus = new FocusSession();
         private string frameKey;
         private long scheduledAt = long.MaxValue;
+        private long presentedAt = -AnimationTiming.FrameMs;
+        private bool framePending, sessionLocked, sessionDisconnected, powerSuspended;
         private Native.LayeredSurface surface;
         public int RenderCount { get; private set; }
         internal PetBrain Brain { get { return brain; } }
         internal CompanionPanel SettingsPanel { get { return panel; } }
         internal bool ReviewMode { get; set; }
+        internal bool FramePending { get { return framePending; } }
+        internal bool SchedulerRunning { get { return scheduler.Enabled; } }
+        internal bool KeyboardRegistered { get { return keyboardRegistered; } }
+        private bool Paused { get { return hidden || sessionLocked || sessionDisconnected || powerSuspended; } }
 
         public PetWindow(PetSettings settings) : this(settings, true) { }
         internal PetWindow(PetSettings settings, bool persistSettings)
@@ -47,6 +53,7 @@ namespace LabPals
             scheduler.Tick += OnScheduled;
             Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplayChanged;
             Microsoft.Win32.SystemEvents.SessionSwitch += OnSessionSwitch;
+            Microsoft.Win32.SystemEvents.PowerModeChanged += OnPowerModeChanged;
         }
         protected override CreateParams CreateParams
         {
@@ -83,8 +90,9 @@ namespace LabPals
         }
         internal bool ProcessStroke(int identity, int handMask, bool down)
         {
+            if (Paused) return false;
             if (!brain.KeyTransition(identity, handMask, down, clock.ElapsedMilliseconds)) return false;
-            RenderFrame(true); Schedule(); return true;
+            RenderFrame(false); Schedule(); return true;
         }
         protected override void OnMouseDown(MouseEventArgs e)
         {
@@ -166,8 +174,8 @@ namespace LabPals
         { brain.ClearHands(); SyncKeyboard(); SaveSettings(); RenderFrame(true); Schedule(); }
         private void SyncKeyboard()
         {
-            bool enabled = !hidden && settings.Keyboard && !settings.Quiet && !brain.Focusing && !brain.ManualSleep;
-            if (!hidden && settings.AutoSleep && !brain.ManualSleep && !brain.Focusing) enabled = true;
+            bool enabled = !Paused && settings.Keyboard && !settings.Quiet && !brain.Focusing && !brain.ManualSleep;
+            if (!Paused && settings.AutoSleep && !brain.ManualSleep && !brain.Focusing) enabled = true;
             if (enabled == keyboardRegistered) return;
             if (Native.RegisterKeyboard(Handle, enabled)) keyboardRegistered = enabled;
             else if (enabled) tray.Text = "实验室同桌 · 键盘跟随不可用，右键仍可操作";
@@ -188,33 +196,39 @@ namespace LabPals
         }
         private void Schedule()
         {
-            if (hidden && !focus.Active) { scheduler.Stop(); scheduledAt = long.MaxValue; return; }
+            if (Paused && !focus.Active) { scheduler.Stop(); scheduledAt = long.MaxValue; return; }
             long now = clock.ElapsedMilliseconds;
-            int delay = brain.NextDelay(now);
-            if (focus.Active) delay = Math.Min(delay, hidden ? 60000 : 1000);
+            int delay = Paused ? 60000 : brain.NextDelay(now);
+            if (focus.Active) delay = Math.Min(delay, Paused ? 60000 : 1000);
+            if (framePending && !Paused) delay = Math.Min(delay, (int)Math.Max(15, presentedAt + AnimationTiming.FrameMs - now));
+            if (delay == int.MaxValue) { scheduler.Stop(); scheduledAt = long.MaxValue; return; }
             if (scheduler.Enabled && scheduledAt <= now + delay) return;
             scheduler.Stop(); scheduledAt = now + delay;
             scheduler.Interval = Math.Max(15, delay); scheduler.Start();
         }
         private void RenderFrame(bool force)
         {
-            if (hidden || !IsHandleCreated || disposed) return;
+            if (Paused || !IsHandleCreated || disposed) return;
             long now = clock.ElapsedMilliseconds;
+            // Input storms only update the state machine until a frame is due.
+            // Avoid sampling and allocating a visual key for every raw event.
+            if (!force && now - presentedAt < AnimationTiming.FrameMs) { framePending = true; return; }
             string timer = TimerText(); int phase = brain.Phase(now);
             HandSample left = brain.LeftHand(now), right = brain.RightHand(now);
-            string key = settings.Character + ":" + brain.Pose + ":" + phase + ":" + settings.Scale + ":" + timer + ":" + (int)(left.Press * 1000) + ":" + (int)(right.Press * 1000) + ":" + (int)(left.Impact * 1000) + ":" + (int)(right.Impact * 1000);
-            if (!force && key == frameKey) return;
+            int visualPhase = brain.Pose == Pose.Pat ? (int)Math.Round(PetRenderer.ReactionWeight(phase) * 32) : phase;
+            string key = settings.Character + ":" + brain.Pose + ":" + visualPhase + ":" + settings.Scale + ":" + timer + ":" + (int)(left.Press * 1000) + ":" + (int)(right.Press * 1000) + ":" + (int)(left.Impact * 1000) + ":" + (int)(right.Impact * 1000);
+            if (!force && key == frameKey) { framePending = false; return; }
             if (surface == null || surface.Width != Width || surface.Height != Height)
             { if (surface != null) surface.Dispose(); surface = new Native.LayeredSurface(Width, Height); }
             PetRenderer.DrawTo(surface.Graphics, settings.Character, brain.Pose, phase, settings.Scale, timer, left, right);
-            surface.Present(Handle, Left, Top); frameKey = key; RenderCount++;
+            surface.Present(Handle, Left, Top); frameKey = key; presentedAt = clock.ElapsedMilliseconds; framePending = false; RenderCount++;
         }
         internal void HidePet()
-        { hidden = true; brain.Hidden = true; Hide(); SyncKeyboard(); Schedule(); }
+        { hidden = true; Hide(); UpdateSuspension(); }
         internal void ShowPet()
         {
-            hidden = false; brain.Hidden = false; ClampPosition(); Show();
-            brain.Wake(clock.ElapsedMilliseconds); SyncKeyboard(); RenderFrame(true); Schedule();
+            hidden = false; ClampPosition(); Show();
+            brain.Wake(clock.ElapsedMilliseconds); UpdateSuspension();
         }
         internal void ResetPosition()
         {
@@ -229,9 +243,49 @@ namespace LabPals
             Top = Math.Max(area.Top, Math.Min(area.Bottom - Height, Top));
         }
         private void OnDisplayChanged(object sender, EventArgs e)
-        { if (!disposed && IsHandleCreated) BeginInvoke((Action)delegate { if (surface != null) { surface.Dispose(); surface = null; } ClampPosition(); RenderFrame(true); }); }
+        { if (!disposed && IsHandleCreated) BeginInvoke((Action)delegate { if (disposed) return; if (surface != null) { surface.Dispose(); surface = null; } ClampPosition(); RenderFrame(true); }); }
         private void OnSessionSwitch(object sender, Microsoft.Win32.SessionSwitchEventArgs e)
-        { if (!disposed && IsHandleCreated) BeginInvoke((Action)delegate { brain.ClearHands(); RenderFrame(true); Schedule(); }); }
+        {
+            if (disposed || !IsHandleCreated) return;
+            BeginInvoke((Action)delegate
+            {
+                if (disposed) return;
+                switch (e.Reason)
+                {
+                    case Microsoft.Win32.SessionSwitchReason.SessionLock:
+                    case Microsoft.Win32.SessionSwitchReason.SessionLogoff: SetSessionLocked(true); break;
+                    case Microsoft.Win32.SessionSwitchReason.SessionUnlock:
+                    case Microsoft.Win32.SessionSwitchReason.SessionLogon: SetSessionLocked(false); break;
+                    case Microsoft.Win32.SessionSwitchReason.ConsoleDisconnect:
+                    case Microsoft.Win32.SessionSwitchReason.RemoteDisconnect: SetSessionDisconnected(true); break;
+                    case Microsoft.Win32.SessionSwitchReason.ConsoleConnect:
+                    case Microsoft.Win32.SessionSwitchReason.RemoteConnect: SetSessionDisconnected(false); break;
+                }
+            });
+        }
+        private void OnPowerModeChanged(object sender, Microsoft.Win32.PowerModeChangedEventArgs e)
+        {
+            if (disposed || !IsHandleCreated || e.Mode == Microsoft.Win32.PowerModes.StatusChange) return;
+            BeginInvoke((Action)delegate { if (!disposed) SetPowerSuspended(e.Mode == Microsoft.Win32.PowerModes.Suspend); });
+        }
+        internal void SetSessionLocked(bool value) { sessionLocked = value; UpdateSuspension(); }
+        internal void SetSessionDisconnected(bool value) { sessionDisconnected = value; UpdateSuspension(); }
+        internal void SetPowerSuspended(bool value) { powerSuspended = value; UpdateSuspension(); }
+        private void UpdateSuspension()
+        {
+            brain.Hidden = Paused; brain.ClearHands(); framePending = false;
+            if (Paused)
+            {
+                PetRenderer.ClearCache();
+                if (surface != null) { surface.Dispose(); surface = null; }
+            }
+            else
+            {
+                if (focus.Advance(clock.ElapsedMilliseconds)) { brain.Focusing = false; brain.Wake(clock.ElapsedMilliseconds); }
+                brain.Step(clock.ElapsedMilliseconds); RenderFrame(true);
+            }
+            SyncKeyboard(); Schedule();
+        }
         private void SaveSettings()
         { if (persistSettings) { settings.Left = Left; settings.Top = Top; settings.Save(); } }
         protected override void Dispose(bool disposing)
@@ -241,6 +295,7 @@ namespace LabPals
                 disposed = true; SaveSettings();
                 Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplayChanged;
                 Microsoft.Win32.SystemEvents.SessionSwitch -= OnSessionSwitch;
+                Microsoft.Win32.SystemEvents.PowerModeChanged -= OnPowerModeChanged;
                 if (panel != null) panel.Dispose();
                 scheduler.Stop(); scheduler.Dispose();
                 if (keyboardRegistered) Native.RegisterKeyboard(Handle, false);

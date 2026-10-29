@@ -35,10 +35,10 @@
   },
   "Mayuri": {
     "handsRegistration": {
-      "score": 594.7607726597325,
-      "s": 1,
-      "dx": 0,
-      "dy": 0
+      "score": 1370.4338781575036,
+      "s": 0.998,
+      "dx": -0.5,
+      "dy": -1
     },
     "reactionRegistration": {
       "score": 753.3187221396731,
@@ -48,22 +48,22 @@
     },
     "sleepSize": [
       412,
-      404
+      395
     ],
     "hands": [
       {
         "pivot": [
-          232,
-          471
+          201,
+          453
         ],
-        "skinPixels": 3454
+        "skinPixels": 5349
       },
       {
         "pivot": [
-          421,
-          473
+          462,
+          459
         ],
-        "skinPixels": 2973
+        "skinPixels": 4881
       }
     ]
   },
