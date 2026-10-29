@@ -1,0 +1,12 @@
+{
+  "name": "lab-pals-development-tools",
+  "private": true,
+  "description": "Optional offline art preparation and GIF previews; never needed by the desktop pet.",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "sharp": "0.35.5"
+  },
+  "license": "MIT"
+}

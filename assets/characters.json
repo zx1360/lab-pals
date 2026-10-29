@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "canvas": {
+    "width": 640,
+    "height": 560
+  },
+  "layers": [
+    "",
+    "-rest",
+    "-left",
+    "-right",
+    "-reaction",
+    "-sleep"
+  ],
+  "characters": [
+    {
+      "id": "Okabe",
+      "value": 0,
+      "name": "冈部伦太郎",
+      "shortName": "冈部",
+      "english": "OKABE",
+      "traits": "后梳发 · 白大褂 · 自信的笑",
+      "reactionCaption": "挑眉，得意地笑一下",
+      "accent": "#768F7D",
+      "leftWrist": [
+        110.5,
+        230.5
+      ],
+      "rightWrist": [
+        209,
+        233.5
+      ]
+    },
+    {
+      "id": "Mayuri",
+      "value": 1,
+      "name": "椎名真由理",
+      "shortName": "真由理",
+      "english": "MAYURI",
+      "traits": "软帽蓝缎带 · 温柔的笑眼",
+      "reactionCaption": "笑眼，小声问好",
+      "accent": "#6D96B1",
+      "leftWrist": [
+        116,
+        235.5
+      ],
+      "rightWrist": [
+        210.5,
+        236.5
+      ]
+    },
+    {
+      "id": "Kurisu",
+      "value": 2,
+      "name": "牧濑红莉栖",
+      "shortName": "红莉栖",
+      "english": "KURISU",
+      "traits": "红棕长发 · 衬衫领带 · 认真",
+      "reactionCaption": "侧目，藏不住的脸红",
+      "accent": "#A76A5E",
+      "leftWrist": [
+        106.5,
+        232
+      ],
+      "rightWrist": [
+        215,
+        233
+      ]
+    },
+    {
+      "id": "Luka",
+      "value": 3,
+      "name": "漆原琉华",
+      "shortName": "琉华",
+      "english": "LUKA",
+      "traits": "短发骷髅夹 · 颈绳 · 含蓄",
+      "reactionCaption": "垂下眼，有点害羞",
+      "accent": "#927DA4",
+      "leftWrist": [
+        108.5,
+        230.5
+      ],
+      "rightWrist": [
+        219.5,
+        230
+      ]
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "Okabe": {
+    "handsRegistration": {
+      "score": 1246.892823858341,
+      "s": 0.978,
+      "dx": 1,
+      "dy": -5.5
+    },
+    "reactionRegistration": {
+      "score": 763.8863000931966,
+      "s": 0.964,
+      "dx": -1,
+      "dy": -8.5
+    },
+    "sleepSize": [
+      433,
+      445
+    ],
+    "hands": [
+      {
+        "pivot": [
+          221,
+          461
+        ],
+        "skinPixels": 3120
+      },
+      {
+        "pivot": [
+          418,
+          467
+        ],
+        "skinPixels": 3108
+      }
+    ]
+  },
+  "Mayuri": {
+    "handsRegistration": {
+      "score": 594.7607726597325,
+      "s": 1,
+      "dx": 0,
+      "dy": 0
+    },
+    "reactionRegistration": {
+      "score": 753.3187221396731,
+      "s": 0.998,
+      "dx": -0.5,
+      "dy": 0
+    },
+    "sleepSize": [
+      412,
+      404
+    ],
+    "hands": [
+      {
+        "pivot": [
+          232,
+          471
+        ],
+        "skinPixels": 3454
+      },
+      {
+        "pivot": [
+          421,
+          473
+        ],
+        "skinPixels": 2973
+      }
+    ]
+  },
+  "Kurisu": {
+    "handsRegistration": {
+      "score": 969.4499650104968,
+      "s": 0.998,
+      "dx": -0.5,
+      "dy": 1
+    },
+    "reactionRegistration": {
+      "score": 849.7284814555634,
+      "s": 0.972,
+      "dx": -0.5,
+      "dy": -5
+    },
+    "sleepSize": [
+      443,
+      413
+    ],
+    "hands": [
+      {
+        "pivot": [
+          213,
+          464
+        ],
+        "skinPixels": 3595
+      },
+      {
+        "pivot": [
+          430,
+          466
+        ],
+        "skinPixels": 3762
+      }
+    ]
+  },
+  "Luka": {
+    "handsRegistration": {
+      "score": 952.9695550351288,
+      "s": 0.99,
+      "dx": 1,
+      "dy": -2.5
+    },
+    "reactionRegistration": {
+      "score": 489.9578454332553,
+      "s": 0.982,
+      "dx": -1,
+      "dy": -4.5
+    },
+    "sleepSize": [
+      442,
+      483
+    ],
+    "hands": [
+      {
+        "pivot": [
+          217,
+          461
+        ],
+        "skinPixels": 3379
+      },
+      {
+        "pivot": [
+          439,
+          460
+        ],
+        "skinPixels": 3291
+      }
+    ]
+  }
+}
