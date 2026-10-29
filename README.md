@@ -3,10 +3,10 @@
 安静陪伴学习的《命运石之门》Q 版 Windows 桌宠。支持冈部、真由理、红莉栖、琉华：键盘敲击、偶尔眨眼、点击回应、独立睡姿与专注计时。
 
 <p>
-<img src="assets/characters/Okabe.png" width="22%" alt="冈部">
-<img src="assets/characters/Mayuri.png" width="22%" alt="真由理">
-<img src="assets/characters/Kurisu.png" width="22%" alt="红莉栖">
-<img src="assets/characters/Luka.png" width="22%" alt="琉华">
+<img src="./assets/characters/Okabe.png" width="22%" alt="冈部">
+<img src="./assets/characters/Mayuri.png" width="22%" alt="真由理">
+<img src="./assets/characters/Kurisu.png" width="22%" alt="红莉栖">
+<img src="./assets/characters/Luka.png" width="22%" alt="琉华">
 </p>
 
 
